@@ -8,7 +8,7 @@ class ReleaseUpdateService {
     : _httpClient = httpClient ?? HttpClient();
 
   static final Uri _latestReleaseUri = Uri.parse(
-    'https://api.github.com/repos/lindnergui/MERAKI/releases/latest',
+    'https://api.github.com/repos/lindnergui/MERAKI-PLAYER/releases/latest',
   );
 
   final HttpClient _httpClient;
