@@ -21,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _passwordController = TextEditingController();
   final _directoryController = TextEditingController();
   bool _passwordVisible = false;
+  bool _jellyfin = false;
 
   @override
   void dispose() {
@@ -47,13 +48,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.all(24),
                   children: <Widget>[
                     Text(
-                      'Servidor Subsonic',
+                      'Servidor de música',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'As credenciais são usadas somente para sincronizar o catálogo. '
-                      'A senha não é enviada ao banco local.',
+                      'Conecte seu Jellyfin ou Subsonic. A senha não é salva no banco local; '
+                      'o catálogo guarda URLs autenticadas para reprodução.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 20),
@@ -61,12 +62,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       key: _formKey,
                       child: Column(
                         children: <Widget>[
+                          DropdownButtonFormField<bool>(
+                            initialValue: _jellyfin,
+                            decoration: const InputDecoration(
+                              labelText: 'Tipo de servidor',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: const <DropdownMenuItem<bool>>[
+                              DropdownMenuItem(value: false, child: Text('Subsonic')),
+                              DropdownMenuItem(value: true, child: Text('Jellyfin')),
+                            ],
+                            onChanged: controller.isSyncingServer
+                                ? null
+                                : (value) => setState(() => _jellyfin = value ?? false),
+                          ),
+                          const SizedBox(height: 12),
                           TextFormField(
                             controller: _serverUrlController,
                             keyboardType: TextInputType.url,
                             decoration: const InputDecoration(
                               labelText: 'URL do servidor',
-                              hintText: 'https://subsonic.exemplo.com',
+                              hintText: 'http://servidor:8096',
                               prefixIcon: Icon(Icons.language_rounded),
                               border: OutlineInputBorder(),
                             ),
@@ -108,24 +124,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ),
-                            validator: _requiredValidator,
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Este campo é obrigatório.'
+                                : null,
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
                     FilledButton.icon(
-                      onPressed: controller.isSyncingSubsonic
+                      onPressed: controller.isSyncingServer
                           ? null
-                          : _syncSubsonic,
-                      icon: controller.isSyncingSubsonic
+                          : _syncServer,
+                      icon: controller.isSyncingServer
                           ? const SizedBox.square(
                               dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.sync_rounded),
                       label: Text(
-                        controller.isSyncingSubsonic
+                        controller.isSyncingServer
                             ? 'Testando e sincronizando…'
                             : 'Testar conexão e sincronizar',
                       ),
@@ -247,29 +265,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return false;
   }
 
-  Future<void> _syncSubsonic() async {
+  Future<void> _syncServer() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     try {
-      await widget.libraryController.syncSubsonic(
+      await widget.libraryController.syncServer(
         serverUrl: _serverUrlController.text.trim(),
         username: _usernameController.text.trim(),
         password: _passwordController.text,
+        jellyfin: _jellyfin,
       );
       if (mounted) {
-        _showMessage('Conexão validada e catálogo Subsonic sincronizado.');
+        _showMessage('Conexão validada e catálogo sincronizado.');
       }
     } catch (_) {
       _showError(
         widget.libraryController.errorMessage ??
-            'Não foi possível conectar ao servidor Subsonic.',
+            'Não foi possível conectar ao servidor de música.',
       );
     }
   }
 
   String? _validateServerUrl(String? value) {
     final uri = Uri.tryParse(value?.trim() ?? '');
-    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+    if (uri == null || !const ['http', 'https'].contains(uri.scheme) || uri.host.isEmpty) {
       return 'Informe uma URL válida do servidor.';
     }
     return null;

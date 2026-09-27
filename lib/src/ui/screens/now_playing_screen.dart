@@ -373,7 +373,8 @@ class _SourceTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSubsonic = source == 'subsonic';
+    final isRemote = source == 'subsonic' || source == 'jellyfin';
+    final label = source == 'jellyfin' ? 'Jellyfin' : source == 'subsonic' ? 'Subsonic' : 'Local';
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
@@ -385,7 +386,7 @@ class _SourceTag extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Icon(
-              isSubsonic
+              isRemote
                   ? PhosphorIconsRegular.cloud
                   : PhosphorIconsRegular.folder,
               color: Theme.of(context).colorScheme.primary,
@@ -393,7 +394,7 @@ class _SourceTag extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              isSubsonic ? 'Subsonic' : 'Local',
+              label,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w700,

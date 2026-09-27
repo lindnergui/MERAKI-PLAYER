@@ -1748,7 +1748,7 @@ class _EmptyCatalogHint extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Conecte seu Subsonic ou selecione uma pasta de músicas para começar.',
+                'Conecte seu Jellyfin ou Subsonic, ou selecione uma pasta de músicas para começar.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: MerakiColors.softText),
               ),
