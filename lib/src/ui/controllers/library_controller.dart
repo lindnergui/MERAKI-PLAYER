@@ -4,7 +4,7 @@ import 'package:meraki/src/data/music_repository.dart';
 import 'package:meraki/src/data/user_preferences.dart';
 import 'package:meraki/src/rust/models/song.dart';
 
-enum LibrarySection { all, local, subsonic, albums }
+enum LibrarySection { all, local, subsonic, jellyfin, albums }
 
 /// Owns catalog state and serialises catalog-refresh operations.
 ///
@@ -26,14 +26,14 @@ class LibraryController extends ChangeNotifier {
   Set<String> _favoriteSongIds = <String>{};
   bool _isLoading = false;
   bool _isScanningLocal = false;
-  bool _isSyncingSubsonic = false;
+  bool _isSyncingServer = false;
   String? _errorMessage;
 
   List<Song> get songs => List<Song>.unmodifiable(_songs);
   bool get isLoading => _isLoading;
   bool get isScanningLocal => _isScanningLocal;
-  bool get isSyncingSubsonic => _isSyncingSubsonic;
-  bool get isBusy => _isLoading || _isScanningLocal || _isSyncingSubsonic;
+  bool get isSyncingServer => _isSyncingServer;
+  bool get isBusy => _isLoading || _isScanningLocal || _isSyncingServer;
   String? get errorMessage => _errorMessage;
   List<Song> get favoriteSongs => _songs
       .where((song) => _favoriteSongIds.contains(song.id))
@@ -51,6 +51,10 @@ class LibraryController extends ChangeNotifier {
       LibrarySection.subsonic =>
         _songs
             .where((song) => song.source == SongSource.subsonic)
+            .toList(growable: false),
+      LibrarySection.jellyfin =>
+        _songs
+            .where((song) => song.source == SongSource.jellyfin)
             .toList(growable: false),
     };
   }
@@ -118,18 +122,22 @@ class LibraryController extends ChangeNotifier {
     }
   }
 
-  Future<void> syncSubsonic({
+  Future<void> syncServer({
     required String serverUrl,
     required String username,
     required String password,
+    bool jellyfin = false,
   }) async {
-    if (_isSyncingSubsonic) return;
-    _isSyncingSubsonic = true;
+    if (_isSyncingServer) return;
+    _isSyncingServer = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _repository.fetchSubsonicSongs(
+      final fetch = jellyfin
+          ? _repository.fetchJellyfinSongs
+          : _repository.fetchSubsonicSongs;
+      await fetch(
         serverUrl: serverUrl,
         username: username,
         password: password,
@@ -140,7 +148,7 @@ class LibraryController extends ChangeNotifier {
       _errorMessage = _friendlyError(error);
       rethrow;
     } finally {
-      _isSyncingSubsonic = false;
+      _isSyncingServer = false;
       notifyListeners();
     }
   }
