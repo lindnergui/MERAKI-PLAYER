@@ -1,4 +1,4 @@
-name: Build and publish Meraki release
+name: Compilar e publicar Meraki
 
 on:
   push:
@@ -9,7 +9,11 @@ permissions:
   contents: write
 
 jobs:
+  validar:
+    uses: ./.github/workflows/validate.yml
+
   build-android:
+    needs: validar
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
@@ -58,6 +62,7 @@ jobs:
           if-no-files-found: error
 
   build-flatpak:
+    needs: validar
     name: Build Linux Flatpak
     runs-on: ubuntu-24.04
     container:
@@ -90,6 +95,7 @@ jobs:
     needs: [build-android, build-flatpak]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
       - name: Download Android APK
         uses: actions/download-artifact@v4
         with:
@@ -105,7 +111,8 @@ jobs:
       - name: Create GitHub Release and attach assets
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: Meraki Player ${{ github.ref_name }} — Conexão com Jellyfin
+          body_path: RELEASE_NOTES.md
           files: |
             release-assets/meraki-android.apk
             release-assets/meraki.flatpak
