@@ -137,19 +137,44 @@ fn initialize_connection(path: &Path) -> CoreResult<()> {
                     cover_art_url_or_path    TEXT,
                     stream_url_or_file_path  TEXT NOT NULL,
                     duration_seconds         INTEGER,
-                    source                   TEXT NOT NULL CHECK (source IN ('local', 'subsonic'))
+                    source                   TEXT NOT NULL CHECK (source IN ('local', 'subsonic', 'jellyfin'))
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_songs_source ON songs(source);
                 CREATE INDEX IF NOT EXISTS idx_songs_library_order
                     ON songs(artist, album, title);
 
-                PRAGMA user_version = 1;",
+                PRAGMA user_version = 2;",
             )?;
             transaction.commit()?;
             Ok(())
         }
-        1 => Ok(()),
+        1 => {
+            // SQLite exige recriar a tabela para ampliar a restrição CHECK.
+            // A transação preserva todo o catálogo existente em caso de falha.
+            let transaction = connection.transaction()?;
+            transaction.execute_batch(
+                "CREATE TABLE songs_v2 (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    title TEXT NOT NULL,
+                    artist TEXT,
+                    album TEXT,
+                    cover_art_url_or_path TEXT,
+                    stream_url_or_file_path TEXT NOT NULL,
+                    duration_seconds INTEGER,
+                    source TEXT NOT NULL CHECK (source IN ('local', 'subsonic', 'jellyfin'))
+                );
+                INSERT INTO songs_v2 SELECT * FROM songs;
+                DROP TABLE songs;
+                ALTER TABLE songs_v2 RENAME TO songs;
+                CREATE INDEX idx_songs_source ON songs(source);
+                CREATE INDEX idx_songs_library_order ON songs(artist, album, title);
+                PRAGMA user_version = 2;",
+            )?;
+            transaction.commit()?;
+            Ok(())
+        }
+        2 => Ok(()),
         other => Err(CoreError::UnsupportedDatabaseVersion(other)),
     }
 }
@@ -215,6 +240,35 @@ mod tests {
 
         let songs = get_all_songs().await.expect("catalog query");
         assert_eq!(songs.len(), 2);
+        replace_source(SongSource::Jellyfin, vec![song("jellyfin:1", SongSource::Jellyfin)])
+            .await.unwrap();
+        assert_eq!(get_all_songs().await.unwrap().len(), 3);
+        replace_source(SongSource::Jellyfin, vec![]).await.unwrap();
+        assert_eq!(get_all_songs().await.unwrap().len(), 2);
+    }
+
+    #[test]
+    fn migra_catalogo_antigo_sem_perder_musicas() {
+        let directory = tempdir().unwrap();
+        let path = directory.path().join("antigo.sqlite3");
+        let connection = Connection::open(&path).unwrap();
+        connection.execute_batch(
+            "CREATE TABLE songs (
+                id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, artist TEXT,
+                album TEXT, cover_art_url_or_path TEXT, stream_url_or_file_path TEXT NOT NULL,
+                duration_seconds INTEGER, source TEXT NOT NULL CHECK (source IN ('local', 'subsonic'))
+            );
+            INSERT INTO songs VALUES ('local:1', 'Local', NULL, NULL, NULL, '/music.ogg', 10, 'local');
+            INSERT INTO songs VALUES ('subsonic:1', 'Remota', NULL, NULL, NULL, 'https://example.test', 20, 'subsonic');
+            PRAGMA user_version = 1;"
+        ).unwrap();
+        drop(connection);
+        initialize_connection(&path).unwrap();
+        initialize_connection(&path).unwrap();
+        let connection = Connection::open(&path).unwrap();
+        assert_eq!(connection.query_row("SELECT COUNT(*) FROM songs", [], |row| row.get::<_, i32>(0)).unwrap(), 2);
+        assert_eq!(connection.query_row("PRAGMA user_version", [], |row| row.get::<_, i32>(0)).unwrap(), 2);
+        connection.execute("INSERT INTO songs (id, title, stream_url_or_file_path, source) VALUES ('jellyfin:1', 'Nova', 'https://example.test', 'jellyfin')", []).unwrap();
     }
 
     fn song(id: &str, source: SongSource) -> Song {

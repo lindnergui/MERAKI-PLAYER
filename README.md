@@ -1,34 +1,34 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/lindnergui/MERAKI/main/assets/images/meraki_logo.png" width="180" alt="Logo do Meraki Player">
+  <img src="https://raw.githubusercontent.com/lindnergui/MERAKI-PLAYER/main/assets/images/meraki_logo.png" width="180" alt="Logo do Meraki Player">
 </p>
 
 <h1 align="center">Meraki Player</h1>
 
 <p align="center">
-  Sua música, do seu jeito: biblioteca local, Subsonic e reprodução integrada<br>
+  Sua música, do seu jeito: biblioteca local, Subsonic, Jellyfin e reprodução integrada<br>
   para Linux e Android — inclusive no Android Auto.
 </p>
 
 <p align="center">
-  <a href="https://github.com/lindnergui/MERAKI/releases/latest"><img src="https://img.shields.io/github/v/release/lindnergui/MERAKI?display_name=tag&amp;sort=semver&amp;style=for-the-badge" alt="Versão mais recente"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/lindnergui/MERAKI?style=for-the-badge" alt="Licença MIT"></a>
+  <a href="https://github.com/lindnergui/MERAKI-PLAYER/releases/latest"><img src="https://img.shields.io/github/v/release/lindnergui/MERAKI-PLAYER?display_name=tag&amp;sort=semver&amp;style=for-the-badge" alt="Versão mais recente"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/lindnergui/MERAKI-PLAYER?style=for-the-badge" alt="Licença MIT"></a>
   <img src="https://img.shields.io/badge/plataformas-Linux%20%7C%20Android-A855F7?style=for-the-badge" alt="Linux e Android">
-  <a href="https://github.com/lindnergui/MERAKI/actions/workflows/release.yml"><img src="https://github.com/lindnergui/MERAKI/actions/workflows/release.yml/badge.svg" alt="Status da release"></a>
+  <a href="https://github.com/lindnergui/MERAKI-PLAYER/actions/workflows/release.yml"><img src="https://github.com/lindnergui/MERAKI-PLAYER/actions/workflows/release.yml/badge.svg" alt="Status da release"></a>
 </p>
 
 ## Download
 
 > [!IMPORTANT]
 > Baixe o Meraki Player somente pela página oficial de
-> [Releases do GitHub](https://github.com/lindnergui/MERAKI/releases/latest).
+> [Releases do GitHub](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest).
 > Ela contém sempre a versão estável mais recente e suas notas de lançamento.
 
 | Sistema | Formato | Suporte / distribuições | Download oficial |
 | --- | --- | --- | --- |
-| Linux | Flatpak | Linux x86-64; Fedora, Ubuntu, Debian e outras distribuições compatíveis com Flatpak | [Baixar Flatpak](https://github.com/lindnergui/MERAKI/releases/latest/download/meraki.flatpak) |
-| Android | APK | Android e Android Auto | [Baixar APK](https://github.com/lindnergui/MERAKI/releases/latest/download/meraki-android.apk) |
+| Linux | Flatpak | Linux x86-64; Fedora, Ubuntu, Debian e outras distribuições compatíveis com Flatpak | [Baixar Flatpak](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest/download/meraki.flatpak) |
+| Android | APK | Android e Android Auto | [Baixar APK](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest/download/meraki-android.apk) |
 
-[Ver todas as versões e notas de lançamento](https://github.com/lindnergui/MERAKI/releases)
+[Ver todas as versões e notas de lançamento](https://github.com/lindnergui/MERAKI-PLAYER/releases)
 
 ## Instalação
 
@@ -66,7 +66,7 @@ flatpak uninstall com.github.lindnergui.meraki
 ## Principais recursos
 
 - biblioteca local: escaneie e reproduza músicas armazenadas no dispositivo;
-- Subsonic: conecte seu servidor para navegar e reproduzir o catálogo remoto;
+- Subsonic e Jellyfin: escolha o tipo de servidor nas configurações para sincronizar e reproduzir o catálogo remoto;
 - reprodução em segundo plano com controles na notificação, tela bloqueada e
   integração MPRIS no Linux;
 - Android Auto: catálogo, metadados, capas e comandos de mídia no veículo;
@@ -104,8 +104,8 @@ corretos para desenvolver e compilar o aplicativo.
 ### Preparar o ambiente
 
 ```bash
-git clone https://github.com/lindnergui/MERAKI.git
-cd MERAKI
+git clone https://github.com/lindnergui/MERAKI-PLAYER.git
+cd MERAKI-PLAYER
 flutter pub get
 flutter_rust_bridge_codegen generate
 ```

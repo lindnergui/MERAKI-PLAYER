@@ -45,4 +45,16 @@ class MusicRepository {
   }
 
   Future<List<Song>> getAllSongs() => rust_music.getAllSongs();
+
+  Future<List<Song>> fetchJellyfinSongs({
+    required String serverUrl,
+    required String username,
+    required String password,
+  }) {
+    return rust_music.fetchJellyfinSongs(
+      serverUrl: serverUrl,
+      username: username,
+      password: password,
+    );
+  }
 }

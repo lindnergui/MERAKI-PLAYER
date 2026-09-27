@@ -189,7 +189,13 @@ impl SubsonicClient {
             .http
             .get(self.endpoint_url(method, extra_query))
             .send()
-            .await?
+            .await?;
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(CoreError::Subsonic(
+                "API Subsonic não encontrada. Se o servidor for Jellyfin, selecione Jellyfin nas configurações.".to_owned(),
+            ));
+        }
+        let response = response
             .error_for_status()?
             .json::<SubsonicEnvelope>()
             .await?;

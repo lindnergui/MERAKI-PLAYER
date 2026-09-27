@@ -626,8 +626,9 @@ class _AlbumCatalogGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final albums = state.widget.libraryController.albums.entries.toList();
-    if (albums.isEmpty)
+    if (albums.isEmpty) {
       return const _EmptyCatalogHint(title: 'Nenhum álbum encontrado.');
+    }
     return GridView.builder(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -1059,14 +1060,10 @@ class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
     this.subtitle,
     required this.title,
-    this.actionLabel,
-    this.onAction,
   });
 
   final String title;
   final String? subtitle;
-  final String? actionLabel;
-  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -1093,8 +1090,6 @@ class _SectionHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (actionLabel != null)
-          TextButton(onPressed: onAction, child: Text(actionLabel!)),
       ],
     );
   }
@@ -1748,7 +1743,7 @@ class _EmptyCatalogHint extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Conecte seu Subsonic ou selecione uma pasta de músicas para começar.',
+                'Conecte seu Jellyfin ou Subsonic, ou selecione uma pasta de músicas para começar.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: MerakiColors.softText),
               ),

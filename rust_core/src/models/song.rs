@@ -3,6 +3,7 @@
 pub enum SongSource {
     Local,
     Subsonic,
+    Jellyfin,
 }
 
 /// A playback-ready song shared by local and Subsonic libraries.
@@ -26,6 +27,7 @@ impl SongSource {
         match self {
             Self::Local => "local",
             Self::Subsonic => "subsonic",
+            Self::Jellyfin => "jellyfin",
         }
     }
 
@@ -33,6 +35,7 @@ impl SongSource {
         match value {
             "local" => Some(Self::Local),
             "subsonic" => Some(Self::Subsonic),
+            "jellyfin" => Some(Self::Jellyfin),
             _ => None,
         }
     }

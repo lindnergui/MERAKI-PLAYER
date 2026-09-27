@@ -18,13 +18,23 @@ pub(crate) enum CoreError {
     UnsupportedDatabaseVersion(u32),
 
     #[error("HTTP error: {0}")]
-    Http(#[from] reqwest::Error),
+    Http(reqwest::Error),
 
     #[error("background task failed: {0}")]
     BackgroundTask(String),
 
     #[error("Subsonic error: {0}")]
     Subsonic(String),
+
+    #[error("Jellyfin: {0}")]
+    Jellyfin(String),
+}
+
+impl From<reqwest::Error> for CoreError {
+    fn from(error: reqwest::Error) -> Self {
+        // URLs de mídia podem conter tokens; nunca mostrá-las nos erros.
+        Self::Http(error.without_url())
+    }
 }
 
 pub(crate) type CoreResult<T> = Result<T, CoreError>;
