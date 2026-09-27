@@ -4,6 +4,7 @@ pub mod models;
 
 mod database;
 mod error;
+mod jellyfin;
 mod scanner;
 mod subsonic;
 
