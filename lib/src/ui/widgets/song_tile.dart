@@ -130,7 +130,11 @@ class _SourcePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSubsonic = source == SongSource.subsonic;
+    final label = switch (source) {
+      SongSource.local => 'Local',
+      SongSource.subsonic => 'Subsonic',
+      SongSource.jellyfin => 'Jellyfin',
+    };
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
@@ -139,7 +143,7 @@ class _SourcePill extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         child: Text(
-          isSubsonic ? 'Subsonic' : 'Local',
+          label,
           style: TextStyle(
             fontSize: 10,
             color: Theme.of(context).colorScheme.primary,
