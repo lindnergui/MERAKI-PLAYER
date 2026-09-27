@@ -39,6 +39,7 @@ class MerakiAudioHandler extends BaseAudioHandler
   static const String _allSongsId = 'meraki:all-songs';
   static const String _localSongsId = 'meraki:local-songs';
   static const String _subsonicSongsId = 'meraki:subsonic-songs';
+  static const String _jellyfinSongsId = 'meraki:jellyfin-songs';
 
   /// Reads the persisted Rust catalog before Android Auto requests it.
   ///
@@ -87,6 +88,8 @@ class MerakiAudioHandler extends BaseAudioHandler
         return _mediaItemsForSource(SongSource.local);
       case _subsonicSongsId:
         return _mediaItemsForSource(SongSource.subsonic);
+      case _jellyfinSongsId:
+        return _mediaItemsForSource(SongSource.jellyfin);
       default:
         return const <MediaItem>[];
     }
@@ -244,6 +247,11 @@ class MerakiAudioHandler extends BaseAudioHandler
     MediaItem(
       id: _subsonicSongsId,
       title: 'Músicas do Subsonic',
+      playable: false,
+    ),
+    MediaItem(
+      id: _jellyfinSongsId,
+      title: 'Músicas do Jellyfin',
       playable: false,
     ),
   ];
