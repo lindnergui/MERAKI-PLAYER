@@ -150,8 +150,8 @@ class MerakiAudioHandler extends BaseAudioHandler
   }
 
   @override
-  Future<void> playMediaItem(MediaItem requestedItem) {
-    return playFromMediaId(requestedItem.id);
+  Future<void> playMediaItem(MediaItem mediaItem) {
+    return playFromMediaId(mediaItem.id);
   }
 
   /// Replaces the playable queue and starts the selected song. The UI sends a
