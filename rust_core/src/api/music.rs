@@ -4,7 +4,7 @@ use tokio::task;
 
 use crate::database;
 use crate::models::{Song, SongSource};
-use crate::{scanner, subsonic};
+use crate::{jellyfin, scanner, subsonic};
 
 /// Creates (or migrates) the catalog database and makes it active for later calls.
 ///
@@ -48,7 +48,7 @@ pub async fn fetch_subsonic_songs(
 ) -> Result<Vec<Song>, String> {
     let server_url = require_non_empty(server_url, "server_url")?;
     let username = require_non_empty(username, "username")?;
-    let password = require_non_empty(password, "password")?;
+    let password = require_password(password)?;
 
     let songs = subsonic::fetch_songs(&server_url, &username, &password)
         .await
@@ -61,7 +61,33 @@ pub async fn fetch_subsonic_songs(
     Ok(songs)
 }
 
-/// Returns the unified local + Subsonic catalog.
+/// Autentica no Jellyfin e atualiza apenas seu catálogo, sem armazenar a senha.
+pub async fn fetch_jellyfin_songs(
+    server_url: String,
+    username: String,
+    password: String,
+) -> Result<Vec<Song>, String> {
+    let server_url = require_non_empty(server_url, "server_url")?;
+    let username = require_non_empty(username, "username")?;
+    let password = require_password(password)?;
+    let songs = jellyfin::fetch_songs(&server_url, &username, &password)
+        .await
+        .map_err(|error| error.to_string())?;
+    database::replace_source(SongSource::Jellyfin, songs.clone())
+        .await
+        .map_err(|error| error.to_string())?;
+    Ok(songs)
+}
+
+fn require_password(password: String) -> Result<String, String> {
+    if password.is_empty() {
+        Err("Informe a senha do servidor.".to_owned())
+    } else {
+        Ok(password)
+    }
+}
+
+/// Returns the unified local + Subsonic + Jellyfin catalog.
 pub async fn get_all_songs() -> Result<Vec<Song>, String> {
     database::get_all_songs()
         .await
@@ -74,5 +100,17 @@ fn require_non_empty(value: String, field: &str) -> Result<String, String> {
         Err(format!("{field} must not be empty"))
     } else {
         Ok(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn preserva_senha_exatamente_como_digitada() {
+        let password = "  senha &#+%\"  ";
+        assert_eq!(require_password(password.into()).unwrap(), password);
+        assert!(require_password(String::new()).is_err());
     }
 }
