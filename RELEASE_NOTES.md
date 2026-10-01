@@ -1,14 +1,14 @@
-# Meraki Player 1.3.5 — Conexão com Jellyfin
+# Meraki Player 1.3.6 — Versão para Windows
 
-Correção do erro 404 ao conectar um servidor Jellyfin: agora o aplicativo usa a API nativa do Jellyfin, em vez das rotas Subsonic.
+O Meraki Player agora está disponível para Windows 10/11 de 64 bits (x64), com a mesma interface e as bibliotecas local, Jellyfin e Subsonic.
 
-- Selecione **Jellyfin** em **Configurações → Tipo de servidor**, informe a URL, o usuário e a senha e toque em **Testar conexão e sincronizar**.
-- Sincronização de músicas com paginação, metadados, capas e reprodução autenticada, inclusive no catálogo do Android Auto.
-- Bibliotecas Jellyfin, Subsonic e local preservadas separadamente. O banco existente é atualizado automaticamente.
-- Senhas mantidas exatamente como digitadas, incluindo espaços e caracteres especiais.
-- Mensagens de erro sem URLs contendo tokens de autenticação.
-- Verificação de atualizações apontando para o repositório MERAKI-PLAYER.
+- **Instalador EXE:** baixe `meraki-windows-setup.exe` e siga o assistente em português. Instalação por usuário, sem exigir administrador.
+- **Edição portátil:** extraia todo o arquivo `meraki-windows-portable.zip` e execute `meraki.exe`, mantendo as DLLs e a pasta `data` juntas.
+- Compilação nativa em modo Release, com o núcleo Rust e as bibliotecas de áudio e vídeo incluídos. Não é necessário instalar Flutter ou Rust.
+- Controles de reprodução integrados ao Windows e às teclas de mídia.
+- Catálogo e preferências armazenados na pasta de dados do usuário. A edição portátil também usa essa pasta; desinstalar não remove sua biblioteca local.
+- Android e Linux continuam disponíveis nesta release. As telas e o fluxo do aplicativo foram preservados.
 
-A senha não é salva. O catálogo local guarda URLs com o token da sessão para permitir reprodução; se a sessão for revogada no servidor, sincronize novamente.
+O instalador não possui certificado comercial de assinatura digital. Baixe somente desta página oficial.
 
 Desenvolvimento: Guilherme Lindner (@lindnergui).

@@ -6,13 +6,13 @@
 
 <p align="center">
   Sua música, do seu jeito: biblioteca local, Subsonic, Jellyfin e reprodução integrada<br>
-  para Linux e Android — inclusive no Android Auto.
+  para Windows, Linux e Android — inclusive no Android Auto.
 </p>
 
 <p align="center">
   <a href="https://github.com/lindnergui/MERAKI-PLAYER/releases/latest"><img src="https://img.shields.io/github/v/release/lindnergui/MERAKI-PLAYER?display_name=tag&amp;sort=semver&amp;style=for-the-badge" alt="Versão mais recente"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/lindnergui/MERAKI-PLAYER?style=for-the-badge" alt="Licença MIT"></a>
-  <img src="https://img.shields.io/badge/plataformas-Linux%20%7C%20Android-A855F7?style=for-the-badge" alt="Linux e Android">
+  <img src="https://img.shields.io/badge/plataformas-Windows%20%7C%20Linux%20%7C%20Android-A855F7?style=for-the-badge" alt="Windows, Linux e Android">
   <a href="https://github.com/lindnergui/MERAKI-PLAYER/actions/workflows/release.yml"><img src="https://github.com/lindnergui/MERAKI-PLAYER/actions/workflows/release.yml/badge.svg" alt="Status da release"></a>
 </p>
 
@@ -25,12 +25,26 @@
 
 | Sistema | Formato | Suporte / distribuições | Download oficial |
 | --- | --- | --- | --- |
+| Windows | Instalador EXE e ZIP portátil | Windows 10/11 de 64 bits (x64) | [Baixar EXE](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest/download/meraki-windows-setup.exe) · [Portátil](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest/download/meraki-windows-portable.zip) |
 | Linux | Flatpak | Linux x86-64; Fedora, Ubuntu, Debian e outras distribuições compatíveis com Flatpak | [Baixar Flatpak](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest/download/meraki.flatpak) |
 | Android | APK | Android e Android Auto | [Baixar APK](https://github.com/lindnergui/MERAKI-PLAYER/releases/latest/download/meraki-android.apk) |
 
 [Ver todas as versões e notas de lançamento](https://github.com/lindnergui/MERAKI-PLAYER/releases)
 
 ## Instalação
+
+### Windows — EXE
+
+Baixe `meraki-windows-setup.exe` e siga o instalador em português. A instalação
+é por usuário e inclui as bibliotecas necessárias, sem exigir Flutter, Rust
+ou privilégios de administrador.
+
+Para usar sem instalar, extraia **todo** o ZIP portátil e abra `meraki.exe`.
+Mantenha as DLLs e a pasta `data` ao lado do executável. O catálogo e as
+preferências ficam na pasta de dados do usuário, também na edição portátil.
+O instalador não inclui certificado comercial de assinatura digital.
+
+A interface e as funções de músicas locais, Jellyfin e Subsonic são as mesmas.
 
 ### Linux — Flatpak
 
