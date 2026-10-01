@@ -1,0 +1,60 @@
+name: Compilar e testar Windows
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows x64 — testes e instalador
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.98.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Preparar dependências
+        run: flutter pub get --enforce-lockfile
+      - name: Gerar integração Flutter e Rust
+        run: |
+          cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter_rust_bridge_codegen generate
+      - name: Testar núcleo no Windows
+        run: cargo test --locked
+      - name: Analisar aplicativo
+        run: flutter analyze
+      - name: Testar interface
+        run: flutter test
+      - name: Testar aplicativo e áudio nativos
+        run: flutter test integration_test/windows_test.dart -d windows --timeout 3m
+      - name: Compilar EXE otimizado
+        run: flutter build windows --release
+      - name: Empacotar e verificar instalação
+        run: ./scripts/package-windows.ps1
+      - name: Armazenar instalador e edição portátil
+        uses: actions/upload-artifact@v4
+        with:
+          name: meraki-windows
+          path: |
+            dist/windows/meraki-windows-setup.exe
+            dist/windows/meraki-windows-portable.zip
+          if-no-files-found: error

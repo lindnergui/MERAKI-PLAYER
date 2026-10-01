@@ -90,9 +90,13 @@ jobs:
           path: meraki.flatpak
           if-no-files-found: error
 
+  build-windows:
+    needs: validar
+    uses: ./.github/workflows/windows.yml
+
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-flatpak]
+    needs: [build-android, build-flatpak, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -108,11 +112,19 @@ jobs:
           name: meraki-flatpak
           path: release-assets
 
+      - name: Baixar instaladores Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: meraki-windows
+          path: release-assets
+
       - name: Create GitHub Release and attach assets
         uses: softprops/action-gh-release@v2
         with:
-          name: Meraki Player ${{ github.ref_name }} — Conexão com Jellyfin
+          name: Meraki Player ${{ github.ref_name }} — Versão para Windows
           body_path: RELEASE_NOTES.md
           files: |
             release-assets/meraki-android.apk
             release-assets/meraki.flatpak
+            release-assets/meraki-windows-setup.exe
+            release-assets/meraki-windows-portable.zip
