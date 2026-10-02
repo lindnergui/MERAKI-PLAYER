@@ -31,3 +31,8 @@ rust_core/src/frb_generated.rs
 *.sqlite
 *.sqlite3
 *.db
+
+# Arquivos gerados pelo Flutter para Windows
+windows/flutter/ephemeral/
+windows/flutter/generated_*
+dist/windows/

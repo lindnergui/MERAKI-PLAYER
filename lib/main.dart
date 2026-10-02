@@ -26,9 +26,9 @@ Future<void> main() async {
     ..maximumSize = 120
     ..maximumSizeBytes = 32 << 20;
 
-  // just_audio uses media_kit on Linux. Android uses just_audio's native
-  // backend, so registering the Linux implementation there is unnecessary.
-  if (Platform.isLinux) {
+  // Compartilha o backend nativo de áudio entre Linux e Windows.
+  // O Android continua usando seu backend existente.
+  if (Platform.isLinux || Platform.isWindows) {
     JustAudioMediaKit.ensureInitialized();
   }
 

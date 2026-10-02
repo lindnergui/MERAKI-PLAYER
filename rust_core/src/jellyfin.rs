@@ -53,7 +53,7 @@ impl JellyfinClient {
         headers.insert(
             reqwest::header::AUTHORIZATION,
             format!(
-                "MediaBrowser Client=\"Meraki\", Device=\"Meraki Player\", DeviceId=\"{device_id}\", Version=\"1.3.5\""
+                "MediaBrowser Client=\"Meraki\", Device=\"Meraki Player\", DeviceId=\"{device_id}\", Version=\"1.3.6\""
             )
             .parse()
             .expect("cabeçalho de identificação válido"),

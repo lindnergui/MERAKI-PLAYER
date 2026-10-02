@@ -73,7 +73,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: desktop
                   ? Row(
                       children: <Widget>[
-                        Expanded(child: Center(child: form)),
+                        Expanded(
+                          flex: 5,
+                          child: Center(
+                            child: SingleChildScrollView(child: form),
+                          ),
+                        ),
                         const SizedBox(width: 28),
                         const Expanded(flex: 6, child: _WelcomeArtwork()),
                       ],
