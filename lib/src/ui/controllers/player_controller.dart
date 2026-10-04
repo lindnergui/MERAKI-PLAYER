@@ -27,6 +27,9 @@ class PlayerController extends ChangeNotifier {
     _volumeSubscription = _audioHandler.volumeStream.listen((value) {
       volume.value = value;
     });
+    _upNextSubscription = _audioHandler.upNextStream.listen((items) {
+      upNext.value = items;
+    });
     _positionTimer = Timer.periodic(
       const Duration(milliseconds: 500),
       (_) => _updateProjectedPosition(),
@@ -40,12 +43,17 @@ class PlayerController extends ChangeNotifier {
   final ValueNotifier<Duration> position = ValueNotifier<Duration>(
     Duration.zero,
   );
+
+  /// Tracks queued after the current one, in play order.
+  final ValueNotifier<List<MediaItem>> upNext =
+      ValueNotifier<List<MediaItem>>(const <MediaItem>[]);
   late final ValueNotifier<double> volume = ValueNotifier<double>(
     _audioHandler.volume,
   );
   late final StreamSubscription<MediaItem?> _mediaItemSubscription;
   late final StreamSubscription<PlaybackState> _playbackStateSubscription;
   late final StreamSubscription<double> _volumeSubscription;
+  late final StreamSubscription<List<MediaItem>> _upNextSubscription;
   late final Timer _positionTimer;
 
   bool get isPlaying => playbackState.value.playing;
@@ -80,6 +88,14 @@ class PlayerController extends ChangeNotifier {
   Future<void> setVolume(double value) => _audioHandler.setVolume(value);
   Future<void> skipNext() => _audioHandler.skipToNext();
   Future<void> skipPrevious() => _audioHandler.skipToPrevious();
+
+  /// Jumps straight to [item] when it is part of the active queue.
+  Future<void> skipToItem(MediaItem item) async {
+    final index = _audioHandler.queue.value.indexWhere(
+      (entry) => entry.id == item.id,
+    );
+    if (index >= 0) await _audioHandler.skipToQueueItem(index);
+  }
 
   Future<void> toggleShuffle() {
     return _audioHandler.setShuffleMode(
@@ -117,10 +133,12 @@ class PlayerController extends ChangeNotifier {
     _mediaItemSubscription.cancel();
     _playbackStateSubscription.cancel();
     _volumeSubscription.cancel();
+    _upNextSubscription.cancel();
     currentItem.dispose();
     playbackState.dispose();
     position.dispose();
     volume.dispose();
+    upNext.dispose();
     super.dispose();
   }
 }

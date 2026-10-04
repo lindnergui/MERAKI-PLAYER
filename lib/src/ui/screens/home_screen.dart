@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:meraki/src/rust/models/song.dart';
 import 'package:meraki/src/ui/controllers/library_controller.dart';
@@ -12,11 +13,22 @@ import 'package:meraki/src/ui/screens/settings_screen.dart';
 import 'package:meraki/src/ui/widgets/cover_art_image.dart';
 import 'package:meraki/src/ui/widgets/cover_flow_spotlight.dart';
 import 'package:meraki/src/ui/widgets/glass_panel.dart';
+import 'package:meraki/src/ui/widgets/meraki_turntable.dart';
 import 'package:meraki/src/ui/widgets/mini_player.dart';
 import 'package:meraki/src/ui/widgets/song_tile.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
-enum _HomeDestination { home, allSongs, favorites, downloads, albums, artists }
+part 'home_screen_desktop.dart';
+
+enum _HomeDestination {
+  home,
+  allSongs,
+  favorites,
+  downloads,
+  albums,
+  artists,
+  nowPlaying,
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -41,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   Song? _selectedSpotlightSong;
   List<Song> _spotlightSongs = const <Song>[];
+  List<Song> _suggestedSongs = const <Song>[];
 
   @override
   void initState() {
@@ -100,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _spotlightSongs = List<Song>.unmodifiable(
       selection.take(math.min(selection.length, 12)),
     );
+    _suggestedSongs = List<Song>.unmodifiable(selection.skip(12).take(10));
     _selectedSpotlightSong = _spotlightSongs.isEmpty
         ? null
         : _spotlightSongs.first;
@@ -166,7 +180,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _showError('Selecione uma música no Meraki Spotlight primeiro.');
       return;
     }
+    await toggleFavoriteSong(song);
+  }
 
+  Future<void> toggleFavoriteSong(Song song) async {
     try {
       final isNowFavorite = await widget.libraryController.toggleFavorite(song);
       if (mounted) {
@@ -186,6 +203,29 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Catalog song behind the [MediaItem] currently loaded in the player.
+  Song? songForItem(MediaItem? item) {
+    if (item == null) return null;
+    for (final song in widget.libraryController.songs) {
+      if (song.id == item.id) return song;
+    }
+    return null;
+  }
+
+  /// Starts the Meraki Spotlight selection when nothing is loaded yet.
+  Future<void> playSpotlight() async {
+    final songs = _spotlightSongs.isNotEmpty
+        ? _spotlightSongs
+        : widget.libraryController.songs;
+    if (songs.isEmpty) {
+      _showError('Sua biblioteca ainda está vazia.');
+      return;
+    }
+    await playSong(songs.first, songs);
+  }
+
+  void reshuffleSpotlight() => setState(_refreshSpotlightSongs);
+
   Future<void> playSong(Song song, List<Song> queue) async {
     try {
       await widget.playerController.playFromCatalog(song, queue);
@@ -199,41 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
       SnackBar(
         content: Text(message ?? 'Não foi possível atualizar o catálogo.'),
         behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-}
-
-class _DesktopShell extends StatelessWidget {
-  const _DesktopShell({required this.state});
-
-  final _HomeScreenState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(color: MerakiColors.deepPurple),
-        child: SafeArea(
-          child: Row(
-            children: <Widget>[
-              _MerakiSidebar(state: state),
-              Expanded(
-                child: Column(
-                  children: <Widget>[
-                    _TopBar(state: state),
-                    Expanded(child: _DesktopContent(state: state)),
-                    MiniPlayer(
-                      controller: state.widget.playerController,
-                      onOpenNowPlaying: state.openNowPlaying,
-                      desktop: true,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -486,7 +491,9 @@ class _MobileCatalogSheetState extends State<_MobileCatalogSheet> {
     _HomeDestination.albums => 'Álbuns',
     _HomeDestination.artists => 'Artistas',
     _HomeDestination.downloads => 'Músicas baixadas',
-    _HomeDestination.home || _HomeDestination.favorites => 'Biblioteca',
+    _HomeDestination.home ||
+    _HomeDestination.favorites ||
+    _HomeDestination.nowPlaying => 'Biblioteca',
   };
 
   @override
@@ -548,7 +555,9 @@ class _MobileCatalogSheetState extends State<_MobileCatalogSheet> {
         controller: scrollController,
         state: widget.state,
       ),
-      _HomeDestination.home || _HomeDestination.favorites => const SizedBox(),
+      _HomeDestination.home ||
+      _HomeDestination.favorites ||
+      _HomeDestination.nowPlaying => const SizedBox(),
     };
   }
 
@@ -703,211 +712,6 @@ class _ArtistCatalogList extends StatelessWidget {
   }
 }
 
-class _MerakiSidebar extends StatelessWidget {
-  const _MerakiSidebar({required this.state});
-
-  final _HomeScreenState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 248,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
-        child: GlassPanel(
-          enableBlur: false,
-          padding: const EdgeInsets.all(14),
-          borderRadius: const BorderRadius.all(Radius.circular(28)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.fromLTRB(8, 8, 8, 28),
-                child: _MerakiWordmark(),
-              ),
-              _SidebarDestination(
-                label: 'Home',
-                icon: PhosphorIconsRegular.house,
-                selected: state._destination == _HomeDestination.home,
-                onTap: () => state.setDestination(_HomeDestination.home),
-              ),
-              _SidebarDestination(
-                label: 'Todas as Músicas',
-                icon: PhosphorIconsRegular.musicNotes,
-                selected: state._destination == _HomeDestination.allSongs,
-                onTap: () => state.setDestination(_HomeDestination.allSongs),
-              ),
-              _SidebarDestination(
-                label: 'Favoritas',
-                icon: PhosphorIconsRegular.heart,
-                selected: state._destination == _HomeDestination.favorites,
-                onTap: () => state.setDestination(_HomeDestination.favorites),
-              ),
-              _SidebarDestination(
-                label: 'Músicas baixadas',
-                icon: PhosphorIconsRegular.downloadSimple,
-                selected: state._destination == _HomeDestination.downloads,
-                onTap: () => state.setDestination(_HomeDestination.downloads),
-              ),
-              _SidebarDestination(
-                label: 'Álbuns',
-                icon: PhosphorIconsRegular.disc,
-                selected: state._destination == _HomeDestination.albums,
-                onTap: () => state.setDestination(_HomeDestination.albums),
-              ),
-              _SidebarDestination(
-                label: 'Artistas',
-                icon: PhosphorIconsRegular.usersThree,
-                selected: state._destination == _HomeDestination.artists,
-                onTap: () => state.setDestination(_HomeDestination.artists),
-              ),
-              const Spacer(),
-              const Divider(),
-              const SizedBox(height: 12),
-              _ProfileCard(userName: state.widget.userName),
-              const SizedBox(height: 10),
-              TextButton.icon(
-                onPressed: state.logout,
-                icon: Icon(PhosphorIconsRegular.signOut, size: 18),
-                label: const Text('Sair'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SidebarDestination extends StatelessWidget {
-  const _SidebarDestination({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Material(
-        color: selected ? accent.withValues(alpha: 0.16) : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            child: Row(
-              children: <Widget>[
-                Icon(icon, size: 20, color: selected ? accent : null),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: selected ? Colors.white : MerakiColors.softText,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.state});
-
-  final _HomeScreenState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: state.widget.libraryController,
-      builder: (context, _) => Padding(
-        padding: const EdgeInsets.fromLTRB(34, 28, 34, 12),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: TextField(
-                  onChanged: state.setSearchQuery,
-                  decoration: InputDecoration(
-                    hintText: 'Pesquisar por música, álbum ou artista',
-                    prefixIcon: Icon(PhosphorIconsRegular.magnifyingGlass),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            IconButton(
-              tooltip: 'Favoritos',
-              onPressed: state._selectedSpotlightSong == null
-                  ? null
-                  : state.toggleSelectedSpotlightFavorite,
-              color:
-                  state._selectedSpotlightSong != null &&
-                      state.widget.libraryController.isFavorite(
-                        state._selectedSpotlightSong!.id,
-                      )
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-              icon: Icon(
-                state._selectedSpotlightSong != null &&
-                        state.widget.libraryController.isFavorite(
-                          state._selectedSpotlightSong!.id,
-                        )
-                    ? PhosphorIconsFill.heart
-                    : PhosphorIconsRegular.heart,
-              ),
-            ),
-            IconButton(
-              tooltip: 'Configurações',
-              onPressed: state.openSettings,
-              icon: Icon(PhosphorIconsRegular.gear),
-            ),
-            const SizedBox(width: 10),
-            _ProfileHeader(userName: state.widget.userName),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DesktopContent extends StatelessWidget {
-  const _DesktopContent({required this.state});
-
-  final _HomeScreenState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: state.widget.libraryController,
-      builder: (context, _) {
-        if (state.widget.libraryController.isLoading &&
-            state.widget.libraryController.songs.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        return _ContentForDestination(state: state, desktop: true);
-      },
-    );
-  }
-}
-
 class _MobileBrowse extends StatelessWidget {
   const _MobileBrowse({required this.state});
 
@@ -937,7 +741,11 @@ class _ContentForDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (state._destination) {
-      _HomeDestination.home => _HomeDashboard(state: state, desktop: desktop),
+      _HomeDestination.home ||
+      _HomeDestination.nowPlaying => _HomeDashboard(
+        state: state,
+        desktop: desktop,
+      ),
       _HomeDestination.allSongs => _SongsPage(
         title: 'Todas as músicas',
         songs: state.filteredSongs,
@@ -1782,53 +1590,6 @@ class _MerakiWordmark extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w900,
             letterSpacing: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.userName});
-
-  final String userName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        const CircleAvatar(
-          radius: 19,
-          backgroundColor: MerakiColors.panel,
-          child: Icon(Icons.person_rounded, color: Colors.white),
-        ),
-        const SizedBox(width: 9),
-        Text(userName, style: const TextStyle(fontWeight: FontWeight.w700)),
-      ],
-    );
-  }
-}
-
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.userName});
-
-  final String userName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        const CircleAvatar(
-          backgroundColor: MerakiColors.panel,
-          child: Icon(Icons.person_rounded, color: Colors.white),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            userName,
-            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
       ],

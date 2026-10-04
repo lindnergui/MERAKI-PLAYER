@@ -12,6 +12,33 @@ abstract final class MerakiColors {
   static const Color divider = Color(0xFF2A1B3D);
 }
 
+abstract final class MerakiFonts {
+  /// Pixel typeface bundled in `assets/fonts` (Pixelify Sans, SIL OFL 1.1).
+  /// Used for headings, labels and controls of the desktop interface.
+  static const String pixel = 'PixelifySans';
+}
+
+/// Shared pixel-font text style for the desktop interface.
+TextStyle merakiPixelStyle(
+  double size, {
+  Color color = Colors.white,
+  FontWeight weight = FontWeight.w500,
+  double? height,
+  double letterSpacing = 0.4,
+  TextDecoration? decoration,
+}) {
+  return TextStyle(
+    fontFamily: MerakiFonts.pixel,
+    fontSize: size,
+    color: color,
+    fontWeight: weight,
+    height: height,
+    letterSpacing: letterSpacing,
+    decoration: decoration,
+    decorationColor: color,
+  );
+}
+
 ThemeData buildMerakiTheme() {
   const accent = MerakiColors.defaultAccent;
   final scheme =

@@ -23,6 +23,9 @@ class MerakiAudioHandler extends BaseAudioHandler
       playbackState.add(_toPlaybackState(event));
     });
     _indexSubscription = _player.currentIndexStream.listen(_publishCurrentItem);
+    _sequenceSubscription = _player.sequenceStateStream.listen(
+      _publishUpNext,
+    );
   }
 
   final AudioPlayer _player = AudioPlayer();
@@ -30,11 +33,18 @@ class MerakiAudioHandler extends BaseAudioHandler
   final List<MediaItem> _mediaItems = <MediaItem>[];
   final Map<String, BehaviorSubject<Map<String, dynamic>>>
   _libraryChangeStreams = <String, BehaviorSubject<Map<String, dynamic>>>{};
+  final BehaviorSubject<List<MediaItem>> _upNext =
+      BehaviorSubject<List<MediaItem>>.seeded(const <MediaItem>[]);
 
   List<Song> _librarySongs = const <Song>[];
   Map<String, Song> _librarySongsById = const <String, Song>{};
   late final StreamSubscription<PlaybackEvent> _playbackSubscription;
   late final StreamSubscription<int?> _indexSubscription;
+  late final StreamSubscription<SequenceState?> _sequenceSubscription;
+
+  /// Tracks that will play after the current one, in effective play order
+  /// (shuffle aware). Used by the desktop "Próximas músicas" section.
+  ValueStream<List<MediaItem>> get upNextStream => _upNext.stream;
 
   static const String _allSongsId = 'meraki:all-songs';
   static const String _localSongsId = 'meraki:local-songs';
@@ -204,6 +214,13 @@ class MerakiAudioHandler extends BaseAudioHandler
   }
 
   @override
+  Future<void> skipToQueueItem(int index) async {
+    if (index < 0 || index >= _mediaItems.length) return;
+    await _player.seek(Duration.zero, index: index);
+    if (!_player.playing) await play();
+  }
+
+  @override
   Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
     final enabled = shuffleMode != AudioServiceShuffleMode.none;
     if (enabled) {
@@ -235,6 +252,8 @@ class MerakiAudioHandler extends BaseAudioHandler
   Future<void> dispose() async {
     await _playbackSubscription.cancel();
     await _indexSubscription.cancel();
+    await _sequenceSubscription.cancel();
+    await _upNext.close();
     await Future.wait<void>(
       _libraryChangeStreams.values.map((stream) => stream.close()),
     );
@@ -296,6 +315,22 @@ class MerakiAudioHandler extends BaseAudioHandler
       return;
     }
     mediaItem.add(_mediaItems[index]);
+  }
+
+  void _publishUpNext(SequenceState? state) {
+    if (_upNext.isClosed) return;
+    if (state == null) {
+      _upNext.add(const <MediaItem>[]);
+      return;
+    }
+    final effective = state.effectiveSequence;
+    final current = state.currentSource;
+    final position = current == null ? -1 : effective.indexOf(current);
+    final upcoming = <MediaItem>[
+      for (final source in effective.skip(position + 1))
+        if (source.tag case final MediaItem item) item,
+    ];
+    _upNext.add(List<MediaItem>.unmodifiable(upcoming));
   }
 
   Uri? _artUri(String? value, SongSource source) {
